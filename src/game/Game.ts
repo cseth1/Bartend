@@ -14,9 +14,8 @@ export default class Game extends Phaser.Game {
       physics: {
         default: 'arcade',
         arcade: {
-          gravity: { y: 0 },
+          gravity: { y: 0, x: 0 }, // Add x: 0 to satisfy the Vector2Like type
           debug: false,
-          fps: 60
         }
       },
       scene: [MainScene, MixingScene],
@@ -31,25 +30,32 @@ export default class Game extends Phaser.Game {
       },
       audio: {
         disableWebAudio: false,
-        noAudio: false
       }
     };
 
     super(config);
 
-    // Optimize game loop
+    // Start audio context on first user interaction
+    parent.addEventListener('pointerdown', () => {
+      if (this.sound && 'context' in this.sound && this.sound.context.state === 'suspended') {
+        this.sound.context.resume();
+      }
+    }, { once: true });
+
     this.loop.targetFps = 60;
 
-    // Start the game timer with optimized interval
     let lastTime = performance.now();
     const timer = setInterval(() => {
       const currentTime = performance.now();
       if (currentTime - lastTime >= 1000) {
-        if (gameState.timeLeft > 0) {
-          updateGameState({ timeLeft: gameState.timeLeft - 1 });
-          if (gameState.timeLeft === 0) {
+        if (gameState.getState().timeLeft > 0) {
+          updateGameState({ timeLeft: gameState.getState().timeLeft - 1 });
+          if (gameState.getState().timeLeft === 0) {
             clearInterval(timer);
-            this.scene.getScene('MainScene').events.emit('gameOver');
+            const mainScene = this.scene.getScene('MainScene');
+            if (mainScene) {
+              mainScene.events.emit('gameOver');
+            }
           }
         }
         lastTime = currentTime;
