@@ -1,6 +1,6 @@
 import { Recipe } from './data/recipes';
 
-interface GameState {
+export interface GameState {
   score: number;
   timeLeft: number;
   currentRecipe: Recipe | null;
